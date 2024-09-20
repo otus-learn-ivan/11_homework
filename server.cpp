@@ -5,7 +5,7 @@
 #include "server.h"
 #include <thread>
 #include <signal.h>
-
+#include <boost/format.hpp>
 using namespace tp_network_client;
 
 bool g_authed = false;
@@ -66,8 +66,8 @@ void send_auth() {
     std::cout << "send_auth end\n";
 }
 
-extern void parser_bulk(std::string cmd);
-
+//extern void parser_bulk(std::string cmd);
+extern std::string parser_join(std::string);
 using namespace tp_network;
 
 class authorizer {
@@ -101,14 +101,15 @@ public:
         // We have data and now we can
         // do some authorization.
 
-        parser_bulk( connection->data);
-
+        auto answer = parser_join(connection->data);
+        std::string answ_err = "ERR "+answer+ "\n";
+        connection->data = answer.size()?answ_err:"OK\n";
         // ...
         //connection->data = "OK\n";
         // ...
 
         // Now we have response in `connection->data` and it's time to send it.
-        //async_write_data(std::move(connection), &authorizer::on_datasend);
+        async_write_data(std::move(connection), &authorizer::on_datasend);
     }
 
     static void on_datasend(connection_ptr&& connection, const boost::system::error_code& error) {
@@ -141,10 +142,25 @@ struct Tserver_start{
         tp_network::tasks_processor::add_listener(g_port_num, &authorizer::on_connection_accpet);
         assert(!g_authed);
         tp_network::tasks_processor::start();
-        parser_bulk("");
         //assert(g_authed);
     }
 };
+
+struct Tclose{
+    std::thread* close_thread;
+    void operator ()(){
+         close_thread->
+    }
+}
+
+void signal_handler(int signal) {
+  if (signal == SIGINT) {
+    std::cout << "Получен сигнал SIGINT. Завершение работы..." <<std::endl;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    exit(0);
+  }
+}
 
 
 int main_client_server(const unsigned short g_port_num_) {
