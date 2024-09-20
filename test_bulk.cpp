@@ -25,89 +25,27 @@
 
 BOOST_AUTO_TEST_SUITE(test_bulk)
 
-
-BOOST_AUTO_TEST_CASE(test_test)
-{
-  BOOST_CHECK(true == true);
-}
-
-std::vector<std::string> created_files_log(){
-DIR *dir;
-   struct dirent *ent;
-   dir = opendir("."); // "." - текущая директория
-   std::vector<std::string> log_files;
-
-   if (dir != nullptr) {
-       while ((ent = readdir(dir)) != nullptr) {
-           if (ent->d_type == DT_REG && std::string(ent->d_name).find(".log") != std::string::npos) {
-               log_files.push_back(ent->d_name); // Добавляем имя файла в вектор
-           }
-       }
-       closedir(dir);
-   } else {
-       // Обработка ошибки
-       std::cerr << "Ошибка открытия директории\n";
-   }
-   std::sort(log_files.begin(),log_files.end());
-   return log_files;
-}
-// std::vector<std::string>  set_suit_cmd( std::vector<std::string>& commands ){
-//     // Запускаем приложение bulk через popen
-//     FILE* pipe = popen("./bulk 9000 3", "w");
-//     if (pipe == nullptr) {
-//         std::cerr << "Ошибка запуска процесса bulk\n";
-//         return std::vector<std::string>{};
-//     }
-//     // Отправляем команды с задержкой
-//     for (const auto& cmd : commands) {
-//         fprintf(pipe, "%s\n", cmd.c_str());
-//         std::cout << cmd << std::endl;
-//         // Читаем и выводим результат из pipe
-//          char buffer[1024];
-//          while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-//              std::cout << "Получено: " << buffer << std::endl;
-//          }
-//         std::this_thread::sleep_for(std::chrono::milliseconds(100));; // задержка в 1 секунду
-//     }
-//     // Закрываем поток для записи
-//     pclose(pipe);
-//     return created_files_log();
-// }
-
-void print_file(std::string name_file){
-    std::cout << name_file<<": ";
-    std::ifstream file(name_file);
-    if (!file.is_open()) {
-        std::cerr << "Ошибка открытия файла: " << name_file << std::endl;
-        return;
-    }
-    std::string line;
-    while (std::getline(file, line)) {
-        std::cout << line << std::endl;
-    }
-    file.close();
-}
-
 BOOST_AUTO_TEST_CASE(test_valid)
 {
+   std::cout<< "START TEST " << std::endl;
    pid_t pid;
-   // Запуск bulk_server как отдельного процесса
+   // Запуск join_server как отдельного процесса
    if ((pid = fork()) == 0) {
-     // Код для bulk_server
-     system("./bulk_server 9000 3");
+     // Код для join_server
+     system("./join_server 9000");
      exit(0);
    }
 
    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-   std::string command("pgrep bulk_server");
+   std::string command("pgrep join_server");
    FILE* pipe = popen(command.c_str(), "r"); // Запускаем команду и получаем поток
 
    if (pipe != nullptr) {
      char buffer[128];
      if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
        pid = std::stoi(buffer);
-       std::cout << "PID процесса bulk_server: " << pid << std::endl;
+       std::cout << "PID процесса join_server: " << pid << std::endl;
      } else {
        std::cerr << "Ошибка при чтении из потока" << std::endl;
      }
@@ -118,22 +56,37 @@ BOOST_AUTO_TEST_CASE(test_valid)
 
 
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  std::jthread c1([](){system("seq 0 9 |   nc localhost 9000");});
-  std::jthread c2([](){system("seq 10 19 | nc localhost 9000");});
 
-  c1.join();
-  c2.join();
+  system("echo \"INSERT A 0 lean\" | nc localhost 9000");
+  system("echo \"INSERT A 0 understand\" | nc localhost 9000");
+  system("echo \"INSERT A 1 sweater\" | nc localhost 9000");
+  system("echo \"INSERT A 2 frank\" | nc localhost 9000");
+  system("echo \"INSERT A 3 violation\" | nc localhost 9000");
+  system("echo \"INSERT A 4 quality\" | nc localhost 9000");
+  system("echo \"INSERT A 5 precision\" | nc localhost 9000");
+
+  system("echo \"INSERT B 3 proposal\" | nc localhost 9000");
+  system("echo \"INSERT B 4 example\" | nc localhost 9000");
+  system("echo \"INSERT B 5 lake\" | nc localhost 9000");
+  system("echo \"INSERT B 6 flour\" | nc localhost 9000");
+  system("echo \"INSERT B 7 wonder\" | nc localhost 9000");
+  system("echo \"INSERT B 8 selection\" | nc localhost 9000");
+
+  system("echo \"INTERSECTION\" | nc localhost 9000");
+  system("echo \"SYMMETRIC_DIFFERENCE\" | nc localhost 9000");
+  system("echo \"INTERSECTION\" | nc localhost 9000");
+  system("echo \"TRUNCATE A\" | nc localhost 9000");
+  system("echo \"TRUNCATE B\" | nc localhost 9000");
+
+
 
   kill(pid, SIGINT);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-  std::cout <<"Ожидание завершения bulk_server pid: " <<pid <<std::endl;
-  waitpid(pid, nullptr, 0);  // Ожидание завершения bulk_server
-  for (auto& files : created_files_log()){
-      print_file(files);
-  }
-  system("rm *.log");
-  std::cout << "end" << std::endl;
+
+  std::cout <<"Ожидание завершения join_server pid: " <<pid <<std::endl;
+  waitpid(pid, nullptr, 0);  // Ожидание завершения join_server
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

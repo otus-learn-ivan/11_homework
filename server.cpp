@@ -101,9 +101,10 @@ public:
         // We have data and now we can
         // do some authorization.
 
-        auto answer = parser_join(connection->data);
-        std::string answ_err = "ERR "+answer+ "\n";
-        connection->data = answer.size()?answ_err:"OK\n";
+        // auto answer = parser_join(connection->data);
+        // std::string answ_err = "ERR "+answer+ "\n";
+        // connection->data = answer.size()?answ_err:"OK\n";
+        connection->data = parser_join(connection->data);;
         // ...
         //connection->data = "OK\n";
         // ...
@@ -145,13 +146,6 @@ struct Tserver_start{
         //assert(g_authed);
     }
 };
-
-struct Tclose{
-    std::thread* close_thread;
-    void operator ()(){
-         close_thread->
-    }
-}
 
 void signal_handler(int signal) {
   if (signal == SIGINT) {

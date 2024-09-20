@@ -39,17 +39,17 @@ struct Tinserter_table{
             return "ERR duplicate " + v_str[2];
         }
         table[v_str[2]] = v_str[3];
-        for(const auto& out : table){
-            std::cout << out.first << " " << out.second << std::endl;
-        }
-        return "";
+        // for(const auto& out : table){
+        //     std::cout << out.first << " " << out.second << std::endl;
+        // }
+        return "OK\n";
     }
 };
 struct Ttruncate_table{
     std::string operator()(std::vector<string>& v_str){
         auto& table =  v_str[1]=="A"?tableA:tableB;
         table.clear();
-        return "";
+        return "OK\n";
     }
 };
 
@@ -71,6 +71,7 @@ public:
 
 struct Tintersection{//пересечение
     std::string operator()(std::vector<string>& v_str){
+        v_str.clear();
         std::set<string> intersection_key;
         MyInsertIterator<std::set<string>,pair<string,string>> It { std::inserter(intersection_key, intersection_key.begin())};
         std::set_intersection(tableA.begin(), tableA.end(), tableB.begin(), tableB.end(),It,
@@ -80,14 +81,16 @@ struct Tintersection{//пересечение
         for (const auto& key : intersection_key) {
             intersection.insert({key,{tableA[key],tableB[key]}});
         }
+        std::stringstream  answer;
         for(const auto& out : intersection){
-            std::cout << out.first << "," << out.second.first <<","<<out.second.second << std::endl;
+            answer << out.first << "," << out.second.first <<","<<out.second.second << "\n";
         }
-        return "";
+        return answer.str();
     }
 };
 struct Tsymmetric_difference{//разность
     std::string operator()(std::vector<string>& v_str){
+        v_str.clear();
         std::set<string> difference_key;
         MyInsertIterator<std::set<string>,pair<string,string>> It { std::inserter(difference_key, difference_key.begin())};
         std::set_difference(tableA.begin(), tableA.end(), tableB.begin(), tableB.end(),It,
@@ -96,14 +99,15 @@ struct Tsymmetric_difference{//разность
         std::set_difference(tableB.begin(), tableB.end(), tableA.begin(), tableA.end(),It,
                                   [](auto& a, auto& b){return a.first < b.first;}
         );
-        Ttable_answer answer;
+        Ttable_answer difference;
         for (const auto& key : difference_key) {
-            answer.insert({key,{tableA[key],tableB[key]}});
+            tableA.count(key)>0?difference.insert({key,{tableA[key],""}}):difference.insert({key,{"",tableB[key]}});
         }
-        for(const auto& out : answer){
-            std::cout << out.first << "," << out.second.first <<","<<out.second.second << std::endl;
+        std::stringstream  answer;
+        for(const auto& out : difference){
+            answer<< out.first << "," << out.second.first <<","<<out.second.second << std::endl;
         }
-        return "";
+        return answer.str();
     }
 };
 
@@ -119,13 +123,8 @@ std::string parser_join(std::string cmd){
     auto vk_str = str_to_vector(cmd);
     return Comands.at(vk_str[0])(vk_str);
 }
-void signal_handler(int signal) {
-  if (signal == SIGINT) {
-    std::cout << "Получен сигнал SIGINT. Завершение работы..." <<std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    exit(0);
-  }
-}
+
+void signal_handler(int signal);
 int main_client_server(const unsigned short g_port_num_);
 int main(int argc, char* argv[])
 {
